@@ -59,4 +59,10 @@ const customers = new Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+const adminModel = mongoose.model('admin', admin);
+const productModel = mongoose.model('products', products);
+const orderModel = mongoose.model('orders', orders);
+const customerModel = mongoose.model('customers', customers);
+
+export default { adminModel, productModel, orderModel, customerModel };
 
