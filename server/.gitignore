@@ -1,0 +1,87 @@
+# =========================
+# 🌐 Node / JavaScript
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# =========================
+# 🐍 Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.egg-info/
+.eggs/
+.env/
+.venv/
+venv/
+ENV/
+
+# =========================
+# 🔑 Environment & Secrets
+# =========================
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+
+# =========================
+# 🗄️ Database & Data Dumps
+# =========================
+*.sqlite3
+*.db
+*.sql
+*.sqlite
+dump.rdb
+
+# =========================
+# 📦 Build / Dist
+# =========================
+dist/
+build/
+tmp/
+temp/
+.cache/
+coverage/
+*.log
+
+# =========================
+# 🐳 Docker
+# =========================
+.docker/
+docker-compose.override.yml
+
+# =========================
+# 🖥️ OS Files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+
+# =========================
+# 📊 IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# 🚀 Deployment
+# =========================
+.vercel/
+.netlify/
+.aws/
