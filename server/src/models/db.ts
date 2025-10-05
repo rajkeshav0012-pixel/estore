@@ -20,7 +20,7 @@ const admin = new Schema({
 const products = new Schema({
     productID: { type: String, required: true, unique: true },
     name: { type: String, required: true },
-    description: { type: String, required: true },
+    description: { type: String },
     price: { type: Number, required: true },
     rating: { type: Number, default: 0 },
     image: { type: String, required: true },
@@ -35,7 +35,6 @@ const orders = new Schema({
             productID: { type: String, required: true },
             name: { type: String, required: true },
             quantity: { type: Number, required: true },
-            price: { type: Number, required: true }
         }
     ],
     totalAmount: { type: Number, required: true },
