@@ -19,13 +19,42 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: NODE_ENV === 'production' 
-        ? ['https://yourdomain.com', 'https://www.yourdomain.com'] // Replace with your frontend domains
-        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'], // Common frontend dev ports
+    origin: function (origin: string | undefined, callback: Function) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = NODE_ENV === 'production' 
+            ? ['https://yourdomain.com', 'https://www.yourdomain.com'] // Replace with your frontend domains
+            : [
+                'http://localhost:3000', 
+                'http://localhost:3001', 
+                'http://localhost:5173',
+                'http://localhost:8081', // Expo development server
+                'http://10.0.2.2:3000',  // Android emulator localhost
+                'http://192.168.1.100:3000', // Replace with your local IP for physical device testing
+            ];
+        
+        // For React Native/Expo apps, allow any localhost or development origins
+        if (NODE_ENV === 'development') {
+            if (origin.includes('localhost') || 
+                origin.includes('127.0.0.1') || 
+                origin.includes('192.168.') || 
+                origin.includes('10.0.') ||
+                origin.includes('expo')) {
+                return callback(null, true);
+            }
+        }
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 };
 
 app.use(cors(corsOptions));
