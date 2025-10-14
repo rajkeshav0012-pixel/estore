@@ -61,8 +61,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
-    // Handle preflight requests
+    // Handle preflight requests with more explicit logging
     if (req.method === 'OPTIONS') {
+        console.log('=== PREFLIGHT OPTIONS REQUEST ===');
+        console.log('Path:', req.path);
+        console.log('Origin:', origin);
+        console.log('Headers:', req.headers);
         res.sendStatus(200);
         return;
     }
@@ -115,6 +119,26 @@ app.get('/cors-test', (req: Request, res: Response) => {
     });
 });
 
+// Explicit OPTIONS handler for all API routes
+app.options('/api/*', (req: Request, res: Response) => {
+    const origin = req.headers.origin;
+    
+    if (origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else {
+        res.header('Access-Control-Allow-Origin', '*');
+    }
+    
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    console.log('Explicit OPTIONS handler called for:', req.path);
+    console.log('Origin:', origin);
+    
+    res.sendStatus(200);
+});
+
 // API routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/customer', customerRoutes);
@@ -124,6 +148,26 @@ app.get('/', (req: Request, res: Response) => {
   res.status(200).send("server started!");
 });
 
+// Final catch-all OPTIONS handler
+app.options('*', (req: Request, res: Response) => {
+    const origin = req.headers.origin;
+    
+    if (origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else {
+        res.header('Access-Control-Allow-Origin', '*');
+    }
+    
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    console.log('=== CATCH-ALL OPTIONS HANDLER ===');
+    console.log('Path:', req.path);
+    console.log('Origin:', origin);
+    
+    res.sendStatus(200);
+});
 
 // ============= ERROR HANDLING =============
 
