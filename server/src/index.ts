@@ -17,11 +17,20 @@ const app = express();
 
 // ============= MIDDLEWARE =============
 
-// Simple CORS - Allow everything, no bullshit
+// CORS - Allow frontend URL
 app.use((req: Request, res: Response, next: NextFunction) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', '*');
-    res.header('Access-Control-Allow-Headers', '*');
+    const origin = req.headers.origin;
+    
+    // Allow your frontend URL and localhost for development
+    if (origin === 'https://e-store-gpsg.vercel.app' || 
+        origin === 'http://localhost:5173' || 
+        origin === 'http://localhost:3000' ||
+        !origin) { // Allow requests with no origin (Postman, mobile apps)
+        res.header('Access-Control-Allow-Origin', origin || '*');
+    }
+    
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
     res.header('Access-Control-Allow-Credentials', 'true');
     
     if (req.method === 'OPTIONS') {
