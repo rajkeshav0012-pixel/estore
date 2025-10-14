@@ -10,9 +10,14 @@ jobs:
     name: Deploying everything 
 
     steps:
-      - name: SSH into server
+      - name: Setup SSH key
         run: |
-          echo ${{secrets.SSH_PRIVATE_KEY}} > ~/ssh_key
-          chmod 600 ~/ssh_key
-          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.232.75.188 "cd eStore && git pull && npm install && npm run build && pm2 restart estore-node"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 13.232.75.188 >> ~/.ssh/known_hosts
+      
+      - name: Deploy to server
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ubuntu@13.232.75.188 "cd eStore && git pull && npm install && npm run build && pm2 restart estore-node"
 
