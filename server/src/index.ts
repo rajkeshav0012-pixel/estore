@@ -17,56 +17,14 @@ const app = express();
 
 // ============= MIDDLEWARE =============
 
-// CORS configuration - Allow all origins with proper credential handling
-const corsOptions = {
-    origin: (origin: string | undefined, callback: Function) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
-        
-        // Allow any origin for maximum compatibility
-        callback(null, origin);
-    },
-    credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-    allowedHeaders: [
-        'Content-Type', 
-        'Authorization', 
-        'X-Requested-With', 
-        'Accept', 
-        'Origin',
-        'Access-Control-Allow-Origin',
-        'Access-Control-Allow-Headers',
-        'Access-Control-Allow-Methods'
-    ],
-    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
-    preflightContinue: false
-};
-
-app.use(cors(corsOptions));
-
-// Additional CORS headers - Fix for browser CORS with credentials
+// Simple CORS - Allow everything, no bullshit
 app.use((req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin;
-    
-    // Always allow the requesting origin when credentials are involved
-    if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else {
-        // For requests without origin (like Postman), allow all
-        res.header('Access-Control-Allow-Origin', '*');
-    }
-    
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', '*');
+    res.header('Access-Control-Allow-Headers', '*');
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
-    // Handle preflight requests with more explicit logging
     if (req.method === 'OPTIONS') {
-        console.log('=== PREFLIGHT OPTIONS REQUEST ===');
-        console.log('Path:', req.path);
-        console.log('Origin:', origin);
-        console.log('Headers:', req.headers);
         res.sendStatus(200);
         return;
     }
@@ -77,22 +35,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware with CORS debugging
+// Simple request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    
-    // Log CORS-related headers for debugging
-    if (req.headers.origin) {
-        console.log(`Origin: ${req.headers.origin}`);
-    }
-    if (req.method === 'OPTIONS') {
-        console.log('Preflight request detected');
-    }
-    
-    // Log request details for debugging
-    console.log(`Headers:`, req.headers);
-    console.log(`User-Agent:`, req.headers['user-agent']);
-    
+    console.log(`${req.method} ${req.path}`);
     next();
 });
 
@@ -119,26 +64,6 @@ app.get('/cors-test', (req: Request, res: Response) => {
     });
 });
 
-// Explicit OPTIONS handler for all API routes
-app.options('/api/*', (req: Request, res: Response) => {
-    const origin = req.headers.origin;
-    
-    if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else {
-        res.header('Access-Control-Allow-Origin', '*');
-    }
-    
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    console.log('Explicit OPTIONS handler called for:', req.path);
-    console.log('Origin:', origin);
-    
-    res.sendStatus(200);
-});
-
 // API routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/customer', customerRoutes);
@@ -146,27 +71,6 @@ app.use('/api/customer', customerRoutes);
 // Root route
 app.get('/', (req: Request, res: Response) => {
   res.status(200).send("server started!");
-});
-
-// Final catch-all OPTIONS handler
-app.options('*', (req: Request, res: Response) => {
-    const origin = req.headers.origin;
-    
-    if (origin) {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else {
-        res.header('Access-Control-Allow-Origin', '*');
-    }
-    
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    console.log('=== CATCH-ALL OPTIONS HANDLER ===');
-    console.log('Path:', req.path);
-    console.log('Origin:', origin);
-    
-    res.sendStatus(200);
 });
 
 // ============= ERROR HANDLING =============

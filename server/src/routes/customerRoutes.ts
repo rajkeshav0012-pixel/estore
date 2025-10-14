@@ -96,17 +96,9 @@ router.post('/signup', async (req: Request, res: Response) => {
 
 router.post('/signin', async (req: Request, res: Response) => {
     try {
-        console.log('=== SIGNIN ENDPOINT CALLED ===');
-        console.log('Request body:', req.body);
-        console.log('Content-Type:', req.headers['content-type']);
-        console.log('Origin:', req.headers.origin);
-        console.log('User-Agent:', req.headers['user-agent']);
-        console.log('MongoDB connection state:', mongoose.connection.readyState);
-        
         const { phone, password } = req.body;
         
         if (!phone || !password) {
-            console.log('Missing phone or password');
             return res.status(400).json(formatErrorResponse('Phone and password are required'));
         }
 
@@ -235,21 +227,9 @@ router.get('/products/:productID', async (req: Request, res: Response) => {
 
 router.get('/categories', async (req: Request, res: Response) => {
     try {
-        console.log('Categories endpoint called');
-        console.log('MongoDB connection state:', mongoose.connection.readyState);
-        console.log('MongoDB URI:', process.env.MONGODB_URI);
-        
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.error('Database not connected. State:', mongoose.connection.readyState);
-            return res.status(500).json(formatErrorResponse('Database connection error'));
-        }
-
         const categories = await categoryModel.find({ isActive: true })
             .select('categoryID name description image')
             .sort({ name: 1 });
-
-        console.log('Categories found:', categories.length);
 
         // Get product count for each category
         const categoriesWithCount = await Promise.all(
@@ -269,7 +249,6 @@ router.get('/categories', async (req: Request, res: Response) => {
         res.json(formatSuccessResponse('Categories retrieved successfully', categoriesWithCount));
     } catch (error: any) {
         console.error('Get categories error:', error);
-        console.error('Error stack:', error.stack);
         res.status(500).json(formatErrorResponse('Failed to get categories', error.message));
     }
 });
