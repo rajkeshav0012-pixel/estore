@@ -155,36 +155,43 @@ const connectDB = async () => {
     }
 };
 
-// ============= SERVER STARTUP =============
+// ============= DATABASE CONNECTION & EXPORT =============
 
-const startServer = async () => {
-    try {
-        await connectDB();
-        
-        const server = app.listen(APP_PORT, () => {
-            console.log(`🚀 Server is running on port ${APP_PORT}`);
-            console.log(`🌍 Environment: ${NODE_ENV}`);
-            console.log(`📡 API Base URL: http://localhost:${APP_PORT}`);
-            console.log(`🏥 Health Check: http://localhost:${APP_PORT}/health`);
-            console.log(`👨‍💼 Admin API: http://localhost:${APP_PORT}/api/admin`);
-            console.log(`👥 Customer API: http://localhost:${APP_PORT}/api/customer`);
-        });
+// Initialize database connection
+connectDB().catch(console.error);
 
-        // Handle server errors
-        server.on('error', (error: any) => {
-            if (error.code === 'EADDRINUSE') {
-                console.error(`❌ Port ${APP_PORT} is already in use`);
-            } else {
-                console.error('❌ Server error:', error);
-            }
+// Export the Express app for Vercel serverless deployment
+export default app;
+
+// For local development, start the server if not in production
+if (NODE_ENV !== 'production') {
+    const startServer = async () => {
+        try {
+            const server = app.listen(APP_PORT, () => {
+                console.log(`🚀 Server is running on port ${APP_PORT}`);
+                console.log(`🌍 Environment: ${NODE_ENV}`);
+                console.log(`📡 API Base URL: http://localhost:${APP_PORT}`);
+                console.log(`🏥 Health Check: http://localhost:${APP_PORT}/health`);
+                console.log(`👨‍💼 Admin API: http://localhost:${APP_PORT}/api/admin`);
+                console.log(`👥 Customer API: http://localhost:${APP_PORT}/api/customer`);
+            });
+
+            // Handle server errors
+            server.on('error', (error: any) => {
+                if (error.code === 'EADDRINUSE') {
+                    console.error(`❌ Port ${APP_PORT} is already in use`);
+                } else {
+                    console.error('❌ Server error:', error);
+                }
+                process.exit(1);
+            });
+
+        } catch (error) {
+            console.error('❌ Failed to start server:', error);
             process.exit(1);
-        });
+        }
+    };
 
-    } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
-    }
-};
-
-// Start the server
-startServer();
+    // Start the server for local development
+    startServer();
+}
