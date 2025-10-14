@@ -24,7 +24,12 @@ const corsOptions = {
         if (!origin) return callback(null, true);
         
         const allowedOrigins = NODE_ENV === 'production' 
-            ? ['https://yourdomain.com', 'https://www.yourdomain.com'] // Replace with your frontend domains
+            ? [
+                'https://e-store-client-sayan.vercel.app', // Your client deployment URL
+                'https://*.vercel.app', // Allow any Vercel subdomain for client
+                'http://localhost:5173', // For local development
+                'http://localhost:3000'  // For local development
+              ]
             : [
                 'http://localhost:3000', 
                 'http://localhost:3001', 
@@ -34,7 +39,7 @@ const corsOptions = {
                 'http://192.168.1.100:3000', // Replace with your local IP for physical device testing
             ];
         
-        // For React Native/Expo apps, allow any localhost or development origins
+        // For development, allow localhost and local network IPs
         if (NODE_ENV === 'development') {
             if (origin.includes('localhost') || 
                 origin.includes('127.0.0.1') || 
@@ -45,9 +50,15 @@ const corsOptions = {
             }
         }
         
+        // For production, allow Vercel domains
+        if (NODE_ENV === 'production' && origin.includes('.vercel.app')) {
+            return callback(null, true);
+        }
+        
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log(`CORS blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
