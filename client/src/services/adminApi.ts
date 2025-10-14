@@ -108,7 +108,7 @@ export const categories = {
 };
 
 // File Upload Management (MongoDB Storage)
-export const fileUpload = {
+export const fileUpload = { 
   uploadImage: async (formData: FormData): Promise<ApiResponse<{ url: string }>> => {
     const response = await api.post('/api/admin/upload/image', formData, {
       headers: {
