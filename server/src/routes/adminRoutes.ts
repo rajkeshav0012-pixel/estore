@@ -977,6 +977,29 @@ router.get('/stats/overview', authenticateAdmin, async (req: AuthRequest, res: R
     }
 });
 
+// Simple deployment test route (no auth required)
+router.get('/test', async (req: Request, res: Response) => {
+    try {
+        const deploymentInfo = {
+            status: 'Server is running successfully',
+            timestamp: new Date().toISOString(),
+            environment: process.env.NODE_ENV || 'development',
+            version: '1.0.0',
+            features: {
+                mongodbStorage: 'enabled',
+                fileUpload: 'enabled',
+                authentication: 'enabled'
+            },
+            message: 'eStore API is deployed and operational'
+        };
+
+        res.json(formatSuccessResponse('Deployment test successful', deploymentInfo));
+    } catch (error: any) {
+        console.error('Deployment test error:', error);
+        res.status(500).json(formatErrorResponse('Deployment test failed', error.message));
+    }
+});
+
 // Test MongoDB image storage (no auth required for testing)
 router.get('/test-mongo-storage', async (req: Request, res: Response) => {
     try {
