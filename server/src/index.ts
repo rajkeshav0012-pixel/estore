@@ -25,8 +25,8 @@ const corsOptions = {
         
         const allowedOrigins = NODE_ENV === 'production' 
             ? [
-                'https://e-store-client-sayan.vercel.app', // Your client deployment URL
-                'https://*.vercel.app', // Allow any Vercel subdomain for client
+                'https://e-store-gpsg.vercel.app', // Your frontend deployment URL
+                'https://e-store-pi-plum.vercel.app', // Your backend deployment URL (for self-requests)
                 'http://localhost:5173', // For local development
                 'http://localhost:3000'  // For local development
               ]
@@ -64,11 +64,47 @@ const corsOptions = {
     },
     credentials: true,
     optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With', 
+        'Accept', 
+        'Origin',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Methods'
+    ],
+    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+    preflightContinue: false
 };
 
 app.use(cors(corsOptions));
+
+// Additional CORS headers for maximum compatibility
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    
+    // Allow your specific frontend domain
+    if (origin === 'https://e-store-gpsg.vercel.app' || 
+        origin === 'https://e-store-pi-plum.vercel.app' ||
+        (NODE_ENV === 'development' && origin?.includes('localhost'))) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+    }
+    
+    next();
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -87,6 +123,17 @@ app.get('/health', (req: Request, res: Response) => {
         message: 'eStore API is running',
         timestamp: new Date().toISOString(),
         environment: NODE_ENV
+    });
+});
+
+// CORS test route
+app.get('/cors-test', (req: Request, res: Response) => {
+    res.status(200).json({
+        success: true,
+        message: 'CORS is working correctly',
+        origin: req.headers.origin,
+        timestamp: new Date().toISOString(),
+        userAgent: req.headers['user-agent']
     });
 });
 
