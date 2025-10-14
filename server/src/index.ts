@@ -85,17 +85,9 @@ app.use('/api/customer', customerRoutes);
 
 // Root route
 app.get('/', (req: Request, res: Response) => {
-    res.status(200).json({
-        message: 'Welcome to eStore API',
-        version: '1.0.0',
-        endpoints: {
-            admin: '/api/admin',
-            customer: '/api/customer',
-            health: '/health'
-        },
-        documentation: 'Visit /api/docs for API documentation'
-    });
+  res.status(200).send("server started!");
 });
+
 
 // ============= ERROR HANDLING =============
 
