@@ -85,6 +85,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         console.log('Preflight request detected');
     }
     
+    // Log request details for debugging
+    console.log(`Headers:`, req.headers);
+    console.log(`User-Agent:`, req.headers['user-agent']);
+    
     next();
 });
 
