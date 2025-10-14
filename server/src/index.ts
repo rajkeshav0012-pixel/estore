@@ -17,51 +17,9 @@ const app = express();
 
 // ============= MIDDLEWARE =============
 
-// CORS configuration
+// CORS configuration - ALLOW ALL ORIGINS (NO SECURITY)
 const corsOptions = {
-    origin: function (origin: string | undefined, callback: Function) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
-        
-        const allowedOrigins = NODE_ENV === 'production' 
-            ? [
-                'https://e-store-gpsg.vercel.app', // Your frontend deployment URL
-                'https://e-store-pi-plum.vercel.app', // Your backend deployment URL (for self-requests)
-                'http://localhost:5173', // For local development
-                'http://localhost:3000'  // For local development
-              ]
-            : [
-                'http://localhost:3000', 
-                'http://localhost:3001', 
-                'http://localhost:5173',
-                'http://localhost:8081', // Expo development server
-                'http://10.0.2.2:3000',  // Android emulator localhost
-                'http://192.168.1.100:3000', // Replace with your local IP for physical device testing
-            ];
-        
-        // For development, allow localhost and local network IPs
-        if (NODE_ENV === 'development') {
-            if (origin.includes('localhost') || 
-                origin.includes('127.0.0.1') || 
-                origin.includes('192.168.') || 
-                origin.includes('10.0.') ||
-                origin.includes('expo')) {
-                return callback(null, true);
-            }
-        }
-        
-        // For production, allow Vercel domains
-        if (NODE_ENV === 'production' && origin.includes('.vercel.app')) {
-            return callback(null, true);
-        }
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            console.log(`CORS blocked origin: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Allow all origins
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
@@ -81,20 +39,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Additional CORS headers for maximum compatibility
+// Additional CORS headers - ALLOW ALL ORIGINS (NO SECURITY)
 app.use((req: Request, res: Response, next: NextFunction) => {
-    const origin = req.headers.origin;
-    
-    // Allow your specific frontend domain
-    if (origin === 'https://e-store-gpsg.vercel.app' || 
-        origin === 'https://e-store-pi-plum.vercel.app' ||
-        (NODE_ENV === 'development' && origin?.includes('localhost'))) {
-        res.header('Access-Control-Allow-Origin', origin);
-    }
-    
+    // Allow any origin
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Headers', '*');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
