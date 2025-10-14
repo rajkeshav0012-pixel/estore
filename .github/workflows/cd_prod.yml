@@ -5,6 +5,7 @@ on:
       -"main"
 
 jobs:
+  uses: ubuntu-latest
   redeploy_everything:
     name: Deploying everything 
 
