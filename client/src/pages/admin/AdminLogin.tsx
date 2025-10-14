@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 export default function AdminLogin() {
-  const { isAuthenticated, userType, login, loading } = useAuth();
+  const { isAuthenticated, isAdmin, login, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -28,7 +28,7 @@ export default function AdminLogin() {
   }
 
   // Redirect if already logged in as admin
-  if (isAuthenticated && userType === 'admin') {
+  if (isAuthenticated && isAdmin) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 

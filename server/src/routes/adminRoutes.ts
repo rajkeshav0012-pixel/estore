@@ -1,6 +1,8 @@
 import express, { Router } from 'express';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
+import multer from 'multer';
+import mongoose from 'mongoose';
 import type { Request, Response } from 'express';
 import db from '../models/db.js';
 import { authenticateAdmin, generateToken } from '../middleware/auth.js';
@@ -18,12 +20,56 @@ import {
     generateTrackingNumber,
     getOrderStatusDescription
 } from '../utils/helpers.js';
+import { 
+    uploadImageToMongoDB, 
+    uploadMultipleImagesToMongoDB, 
+    deleteImageFromMongoDB,
+    extractImageIdFromUrl 
+} from '../utils/mongoImageStorage.js';
+
+// Image validation function
+function validateImageFile(mimetype: string, size: number) {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  
+  const errors: string[] = [];
+  
+  if (!allowedTypes.includes(mimetype)) {
+    errors.push(`Invalid file type. Allowed: ${allowedTypes.join(', ')}`);
+  }
+  
+  if (size > maxSize) {
+    errors.push(`File too large. Maximum size: ${maxSize / (1024 * 1024)}MB`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
 
 const { adminModel, productModel, orderModel, customerModel, categoryModel } = db;
 dotenv.config(); 
 
 const router = express.Router();
 router.use(express.json());
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 5 // Maximum 5 files at once
+    },
+    fileFilter: (req, file, cb) => {
+        const validation = validateImageFile(file.mimetype, 0); // Size will be checked later
+        if (validation.isValid) {
+            cb(null, true);
+        } else {
+            cb(new Error(validation.errors[0] || 'Invalid file type'));
+        }
+    }
+});
 
 // ============= AUTHENTICATION ROUTES =============
 
@@ -109,6 +155,141 @@ router.post('/signin', async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Signin error:', error);
         res.status(500).json(formatErrorResponse('Sign in failed', error.message));
+    }
+});
+
+// ============= FILE UPLOAD ROUTES =============
+
+router.post('/upload/image', authenticateAdmin, upload.single('image'), async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json(formatErrorResponse('No image file provided'));
+        }
+
+        // Validate file size (multer doesn't validate in fileFilter for size)
+        const validation = validateImageFile(req.file.mimetype, req.file.size);
+        if (!validation.isValid) {
+            return res.status(400).json(formatErrorResponse(validation.errors[0] || 'File validation failed'));
+        }
+
+        console.log('Attempting MongoDB image upload...');
+        const result = await uploadImageToMongoDB(
+            mongoose.connection.db, 
+            req.file,
+            'products'
+        );
+
+        if (result.success) {
+            console.log('MongoDB upload successful');
+            res.json(formatSuccessResponse('Image uploaded successfully to MongoDB', { 
+                url: result.url
+            }));
+        } else {
+            console.error('MongoDB upload failed:', result.error);
+            res.status(500).json(formatErrorResponse(result.error || 'Failed to upload image'));
+        }
+    } catch (error: any) {
+        console.error('Image upload error:', error);
+        res.status(500).json(formatErrorResponse('Failed to upload image', error.message));
+    }
+});
+
+router.post('/upload/images', authenticateAdmin, upload.array('images', 5), async (req: AuthRequest, res: Response) => {
+    try {
+        const files = req.files as Express.Multer.File[];
+        
+        if (!files || files.length === 0) {
+            return res.status(400).json(formatErrorResponse('No image files provided'));
+        }
+
+        // Validate all files
+        for (const file of files) {
+            const validation = validateImageFile(file.mimetype, file.size);
+            if (!validation.isValid) {
+                return res.status(400).json(formatErrorResponse(`File ${file.originalname}: ${validation.errors[0]}`));
+            }
+        }
+
+        console.log('Attempting to upload multiple images to MongoDB...');
+        const result = await uploadMultipleImagesToMongoDB(mongoose.connection.db, files, 'products');
+
+        if (!result.success || result.successful === 0) {
+            return res.status(500).json(formatErrorResponse('All image uploads failed', result.errors?.join(', ')));
+        }
+
+        const response = {
+            urls: result.urls || [],
+            successful: result.successful || 0,
+            failed: result.failed || 0,
+            errors: result.errors || []
+        };
+
+        if (result.failed && result.failed > 0) {
+            res.status(207).json(formatSuccessResponse('Some images uploaded successfully', response));
+        } else {
+            res.json(formatSuccessResponse('All images uploaded successfully', response));
+        }
+    } catch (error: any) {
+        console.error('Multiple image upload error:', error);
+        res.status(500).json(formatErrorResponse('Failed to upload images', error.message));
+    }
+});
+
+router.delete('/upload/image', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const { imageUrl, imageId } = req.body;
+
+        if (!imageUrl && !imageId) {
+            return res.status(400).json(formatErrorResponse('Image URL or Image ID is required'));
+        }
+
+        // For MongoDB, we need the imageId. Try to extract it from URL if not provided
+        let targetImageId = imageId;
+        if (!targetImageId && imageUrl) {
+            targetImageId = extractImageIdFromUrl(imageUrl);
+        }
+
+        if (!targetImageId) {
+            return res.status(400).json(formatErrorResponse('Cannot identify image to delete. For MongoDB storage, provide imageId.'));
+        }
+
+        console.log('Attempting to delete image from MongoDB:', targetImageId);
+        const result = await deleteImageFromMongoDB(mongoose.connection.db, targetImageId);
+
+        if (result.success) {
+            res.json(formatSuccessResponse('Image deleted successfully'));
+        } else {
+            res.status(500).json(formatErrorResponse(result.error || 'Failed to delete image'));
+        }
+    } catch (error: any) {
+        console.error('Image delete error:', error);
+        res.status(500).json(formatErrorResponse('Failed to delete image', error.message));
+    }
+});
+
+// Get image by ID route (for MongoDB storage)
+router.get('/image/:imageId', async (req: Request, res: Response) => {
+    try {
+        const { imageId } = req.params;
+        
+        if (!imageId) {
+            return res.status(400).json(formatErrorResponse('Image ID is required'));
+        }
+
+        const { getImageFromMongoDB } = await import('../utils/mongoImageStorage.js');
+        const result = await getImageFromMongoDB(mongoose.connection.db, imageId);
+
+        if (result.success && result.data) {
+            // Return the Base64 data directly
+            res.json(formatSuccessResponse('Image retrieved successfully', { 
+                url: result.data 
+            }));
+        } else {
+            res.status(404).json(formatErrorResponse('Image not found'));
+        }
+    } catch (error: any) {
+        console.error('Image retrieval error:', error);
+        res.status(500).json(formatErrorResponse('Failed to retrieve image', error.message));
     }
 });
 
@@ -793,6 +974,59 @@ router.get('/stats/overview', authenticateAdmin, async (req: AuthRequest, res: R
     } catch (error: any) {
         console.error('Overview stats error:', error);
         res.status(500).json(formatErrorResponse('Failed to get overview statistics', error.message));
+    }
+});
+
+// Test MongoDB image storage (no auth required for testing)
+router.get('/test-mongo-storage', async (req: Request, res: Response) => {
+    try {
+        // Create a simple test image buffer
+        const testImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU77mgAAAABJRU5ErkJggg==', 'base64');
+        
+        const testFile: Express.Multer.File = {
+            fieldname: 'test',
+            originalname: 'test.png',
+            encoding: '7bit',
+            mimetype: 'image/png',
+            buffer: testImageBuffer,
+            size: testImageBuffer.length,
+            destination: '',
+            filename: '',
+            path: '',
+            stream: null as any
+        };
+
+        const result = await uploadImageToMongoDB(mongoose.connection.db, testFile, 'test');
+        
+        if (result.success) {
+            res.json(formatSuccessResponse('MongoDB image storage test successful', {
+                imageId: result.imageId,
+                url: result.url,
+                message: 'Test image uploaded and can be displayed directly in browser'
+            }));
+        } else {
+            res.status(500).json(formatErrorResponse('MongoDB image storage test failed', result.error));
+        }
+    } catch (error: any) {
+        console.error('MongoDB storage test error:', error);
+        res.status(500).json(formatErrorResponse('MongoDB storage test failed', error.message));
+    }
+});
+
+// Test Firebase Storage connection (with auth)
+router.get('/test/firebase', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+    try {
+        const { testFirebaseConnection } = await import('../utils/firebaseTest.js');
+        const result = await testFirebaseConnection();
+        
+        if (result.success) {
+            res.json(formatSuccessResponse('Firebase Storage connection successful', result));
+        } else {
+            res.status(500).json(formatErrorResponse('Firebase Storage connection failed', result.error));
+        }
+    } catch (error: any) {
+        console.error('Firebase test error:', error);
+        res.status(500).json(formatErrorResponse('Firebase test failed', error.message));
     }
 });
 

@@ -106,3 +106,50 @@ export const categories = {
     return response.data;
   },
 };
+
+// File Upload Management (MongoDB Storage)
+export const fileUpload = {
+  uploadImage: async (formData: FormData): Promise<ApiResponse<{ url: string }>> => {
+    const response = await api.post('/api/admin/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  uploadMultipleImages: async (formData: FormData): Promise<ApiResponse<{ urls: string[]; successful: number; failed: number; errors: string[] }>> => {
+    const response = await api.post('/api/admin/upload/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deleteImage: async (data: { imageId: string }): Promise<ApiResponse<void>> => {
+    const response = await api.delete('/api/admin/upload/image', { data });
+    return response.data;
+  },
+
+  // Get image by ID (returns the actual image data)
+  getImage: async (imageId: string): Promise<ApiResponse<{ contentType: string; data: string }>> => {
+    const response = await api.get(`/api/admin/upload/image/${imageId}`);
+    return response.data;
+  },
+};
+
+// Export main API object for backward compatibility
+export const adminApi = {
+  auth: adminAuth,
+  dashboard,
+  products,
+  orders,
+  customers,
+  categories,
+  fileUpload,
+  // Add direct methods for convenience
+  uploadImage: fileUpload.uploadImage,
+  uploadMultipleImages: fileUpload.uploadMultipleImages,
+  deleteImage: fileUpload.deleteImage,
+};

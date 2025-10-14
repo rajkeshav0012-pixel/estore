@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/middleware/auth.ts","./src/models/db.ts","./src/routes/adminRoutes.ts","./src/routes/customerRoutes.ts","./src/utils/helpers.ts"],"version":"5.9.3"}
+{"root":["./src/firebase.ts","./src/index.ts","./src/middleware/auth.ts","./src/models/db.ts","./src/routes/adminRoutes.ts","./src/routes/customerRoutes.ts","./src/utils/fileUpload.ts","./src/utils/firebaseTest.ts","./src/utils/helpers.ts","./src/utils/mongoImageStorage.ts","./src/utils/storageTest.ts"],"version":"5.9.3"}

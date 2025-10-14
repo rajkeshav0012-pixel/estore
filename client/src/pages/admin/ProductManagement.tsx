@@ -5,6 +5,7 @@ import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import Loading from '../../components/ui/Loading';
 import Pagination from '../../components/ui/Pagination';
+import ImageUpload from '../../components/ui/ImageUpload';
 
 import type { Product } from '../../types';
 
@@ -437,13 +438,31 @@ export default function ProductManagement() {
                 ))}
               </select>
             </div>
-            <div>
-              <Input
-                label="Image URL"
-                value={productForm.images[0] || ''}
-                onChange={(e) => setProductForm({...productForm, images: [e.target.value]})}
-                placeholder="https://example.com/image.jpg"
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+              <ImageUpload
+                onUpload={(urls) => setProductForm({...productForm, images: urls})}
+                multiple={true}
               />
+              {productForm.images.length > 0 && (
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {productForm.images.filter(img => img.trim() !== '').map((img, idx) => (
+                    <div key={idx} className="relative">
+                      <img src={img} alt={`Product ${idx + 1}`} className="w-full h-20 object-cover rounded" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newImages = productForm.images.filter((_, i) => i !== idx);
+                          setProductForm({...productForm, images: newImages});
+                        }}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
