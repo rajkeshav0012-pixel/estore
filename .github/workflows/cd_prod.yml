@@ -19,5 +19,5 @@ jobs:
       
       - name: Deploy to server
         run: |
-          ssh -i ~/.ssh/id_ed25519 ubuntu@13.232.75.188 "cd eStore && git pull && npm install && npm run build && pm2 restart estore-node"
+          ssh -i ~/.ssh/id_ed25519 ubuntu@13.232.75.188 "cd eStore && git pull && cd server && npm install && npm run build && pm2 restart estore-node"
 
