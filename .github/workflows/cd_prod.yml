@@ -1,0 +1,20 @@
+name: Deploying to prod
+on:
+  push:
+    branches:
+      -"main"
+
+jobs:
+  redeploy_everything:
+    name: Deploying everything 
+
+    steps:
+      - name: SSH into server
+      - run: |
+          echo ${{secrets.SSH_PRIVATE_KEY}} &> ~/ssh_key
+          ssh -i ~/ssh_key ubuntu@13.232.75.188
+          cd eStore && git pull
+          npm install
+          npm run build
+          pm2 restart estore-node
+
