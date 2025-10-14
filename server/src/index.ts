@@ -17,9 +17,15 @@ const app = express();
 
 // ============= MIDDLEWARE =============
 
-// CORS configuration - ALLOW ALL ORIGINS (NO SECURITY)
+// CORS configuration - Allow all origins with proper credential handling
 const corsOptions = {
-    origin: true, // Allow all origins
+    origin: (origin: string | undefined, callback: Function) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Allow any origin for maximum compatibility
+        callback(null, origin);
+    },
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
@@ -39,13 +45,21 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Additional CORS headers - ALLOW ALL ORIGINS (NO SECURITY)
+// Additional CORS headers - Fix for browser CORS with credentials
 app.use((req: Request, res: Response, next: NextFunction) => {
-    // Allow any origin
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    
+    // Always allow the requesting origin when credentials are involved
+    if (origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else {
+        // For requests without origin (like Postman), allow all
+        res.header('Access-Control-Allow-Origin', '*');
+    }
+    
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE,PATCH');
-    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
@@ -59,9 +73,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+// Request logging middleware with CORS debugging
 app.use((req: Request, res: Response, next: NextFunction) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    
+    // Log CORS-related headers for debugging
+    if (req.headers.origin) {
+        console.log(`Origin: ${req.headers.origin}`);
+    }
+    if (req.method === 'OPTIONS') {
+        console.log('Preflight request detected');
+    }
+    
     next();
 });
 
