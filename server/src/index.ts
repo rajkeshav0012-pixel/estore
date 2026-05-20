@@ -22,7 +22,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.headers.origin;
     
     // Allow your frontend URL and localhost for development
-    if (origin === 'https://e-store-gpsg.vercel.app' || 
+    if (origin === 'https://estore-frontend-xi.vercel.app' || 
         origin === 'http://localhost:5173' || 
         origin === 'http://localhost:3000' ||
         !origin) { // Allow requests with no origin (Postman, mobile apps)
